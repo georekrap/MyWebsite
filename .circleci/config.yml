@@ -1,0 +1,33 @@
+version: 2.1
+
+executors:
+  nodejs:
+    docker:
+      - image: circleci/node:erbium
+
+commands:
+  configure-aws:
+    description: 'Install dependencies for AWS and Serverless'
+    steps:
+      - run: sudo apt-get install python-dev python-pip
+      - run: sudo pip install awscli
+
+jobs:
+  deploy:
+    parameters:
+      bucket:
+        description: 'The name of the environment to deploy to.'
+        type: string
+    executor: nodejs
+    steps:
+      - checkout
+      - configure-aws
+      - run: aws configure set default.s3.signature_version s3v4
+      - run: aws --region us-east-1 s3 sync build s3://<< parameters.bucket >>/ --delete
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - deploy:
+          bucket: my-test-bucket-989768
